@@ -1,5 +1,4 @@
 from typing import List
-
 import requests
 from bs4 import BeautifulSoup as bs, PageElement
 import numpy as np
@@ -19,48 +18,44 @@ search_query_SJ = '%20'.join(search_string.split())
 
 #####
 # получение результатов запроса с сайта hh.ru
-# bs_result - результат разбора первого запроса
-# все обработанные bs() результаты для первого источника сохраняем в список bs_result
+# pervy - результат разбора первого запроса
+# все обработанные bs() результаты для первого источника сохраняем в список
 # на сайте hh.ru при нахождении определенного блока на странице можно сделать вывод, что вакансии на этой странице есть;
 # поэтому сохраним такую страницу для последующего разбора
 # если получена ссылка в строке с get(href) - значит, информация о вакансии на странице есть - и мы получаем еще одну разобранную функцией bs страницу
 # сохраняем информацию в виде списка для разбора вакансий hh.ru
 #####
-request_result_HH = requests.get(main_link_HH + '?text=' + search_query_HH, headers=header)
-bs_result_HH = bs(request_result_HH.text, 'lxml')
-bs_result_list_HH: List[PageElement] = [bs_result_HH.find('div', {'class': 'vacancy-serp'})]
+request_HH = requests.get(main_link_HH + '?text=' + search_query_HH, headers=header)
+pervy_HH = bs(request_HH.text, 'lxml')
+pervy_list_HH: List[PageElement] = [pervy_HH.find('div', {'class': 'vacancy-serp'})]
 i = 1
 while i:
     try:
-        bs_result_HH = bs(
+        pervy_HH = bs(
             requests.get(main_link_HH + '?text=' + search_query_HH + '&page=' + str(i), headers=header).text, 'lxml')
-        bs_result_vacancies_HH = bs_result_HH.find('div', {'class': 'vacancy-serp'})
-        bs_result_vacancies_HH.find('a', {'data-qa': 'vacancy-serp__vacancy-title'}).get('href')
-        bs_result_list_HH.append(bs_result_vacancies_HH)
+        pervy_vacancies_HH = pervy_HH.find('div', {'class': 'vacancy-serp'})
+        pervy_vacancies_HH.find('a', {'data-qa': 'vacancy-serp__vacancy-title'}).get('href')
+        pervy_list_HH.append(pervy_vacancies_HH)
         i += 1
     except Exception:
         break
 
 #####
 # получение результатов запроса с сайта superjob.ru
-# получение результатов со второго источника тем же методом - и сохранение их в список bs_result2
-# номер последней страницы можно узнать из paging внизу страницы
-# 0 и 1 страницы на superjob - это одно и то же; поэтому, после получения первых результатов (первая страница) переходим ко второй (2)
-# в получившемся page_list_SJ 9 "лишних" элементов; если элементов больше, значит, есть и другие, кроме проверенной, страницы
 #####
-request_result_SJ = requests.get(main_link_SJ + '?keywords=' + search_query_SJ, headers=header)
-bs_result_SJ = bs(request_result_SJ.text, 'lxml')
-bs_result_list_SJ = []
-bs_result_list_SJ.append(bs_result_SJ)
-page_list_SJ = bs_result_SJ.find_all('span', {'class': '_3IDf-'})
+zapros_SJ = requests.get(main_link_SJ + '?keywords=' + search_query_SJ, headers=header)
+rezultat_zaprosa_SJ = bs(zapros_SJ.text, 'lxml')
+resultat_list_SJ = []
+resultat_list_SJ.append(rezultat_zaprosa_SJ)
+list_page_SJ = rezultat_zaprosa_SJ.find_all('span', {'class': '_3IDf-'})
 i = 2
-if any('>1</span>' in str(i) for i in page_list_SJ):
-    last_page = int(str(page_list_SJ[-3:-1][0]).split('>')[1].split('<')[0])
+if any('>1</span>' in str(i) for i in list_page_SJ):
+    last_page = int(str(list_page_SJ[-3:-1][0]).split('>')[1].split('<')[0])
     while i <= last_page:
-        bs_result_SJ = bs(
+        rezultat_zaprosa_SJ = bs(
             requests.get(main_link_SJ + '?keywords=' + search_query_SJ + '&page=' + str(i), headers=header).text,
             'lxml')
-        bs_result_list_SJ.append(bs_result_SJ)
+        resultat_list_SJ.append(rezultat_zaprosa_SJ)
         i += 1
 
 # создаем списки для сохранения данных о зарплате
@@ -68,8 +63,8 @@ if any('>1</span>' in str(i) for i in page_list_SJ):
 # максимальная зарплата - max_salary
 # информация о заработной плате сохраняется в salary_data (со всех источников, по порядку)
 # валюта, в которой платится зарплата - currency
-# список вакансий: vac_list_title_HH для HeadHunter, vac_list_title_SJ для SuperJob
-# список всех вакансий: vac_list_title (со всех источников, по порядку)
+# список вакансий: vac_listHH для HeadHunter, vac_listSJ для SuperJob
+# список всех вакансий: vac_list_vse (со всех источников, по порядку)
 # итоговый датафрейм: result
 ##### Зарплата: разбор
 # для каждого элемента в получающемся списке проверям 4 условия
@@ -89,13 +84,13 @@ if any('>1</span>' in str(i) for i in page_list_SJ):
 min_salary = []
 max_salary = []
 currency = []
-vac_list_title_HH = []
-vac_list_title_SJ = []
-for bs_result_vacancies_HH in bs_result_list_HH:
-    for i in bs_result_vacancies_HH.find_all('a', {'data-qa': 'vacancy-serp__vacancy-title'}):
+vac_listHH = []
+vac_listSJ = []
+for pervy_vacancies_HH in pervy_list_HH:
+    for i in pervy_vacancies_HH.find_all('a', {'data-qa': 'vacancy-serp__vacancy-title'}):
         link = i.get('href').split('?query')[0]
-        vac_list_title_HH.append([link, i.getText(), 'HeadHunter', link.split('vacancy/')[-1].split('&place')[0]])
-    for i in bs_result_vacancies_HH.find_all('div', {'class': 'vacancy-serp-item__row vacancy-serp-item__row_header'}):
+        vac_listHH.append([link, i.getText(), 'HeadHunter', link.split('vacancy/')[-1].split('&place')[0]])
+    for i in pervy_vacancies_HH.find_all('div', {'class': 'vacancy-serp-item__row vacancy-serp-item__row_header'}):
         vac_salary = i.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'})
         if vac_salary:
             salary = unicodedata.normalize('NFKD', vac_salary.getText())
@@ -119,28 +114,28 @@ for bs_result_vacancies_HH in bs_result_list_HH:
 ####
 # SuperJob
 ####
-for bs_result_SJ in bs_result_list_SJ:
+for rezultat_zaprosa_SJ in resultat_list_SJ:
     # по какой-то причине теги на superjob меняются; поэтому обрабатываются сразу 2 варианта, которые были выявлены при перехвате ошибок
     try:
-        bs_result_vacancies_SJ = bs_result_SJ.find_all('div', {'class': 'f-test-vacancy-item'})
+        result_vacanciesSJ = rezultat_zaprosa_SJ.find_all('div', {'class': 'f-test-vacancy-item'})
     except Exception:
         pass
-    if 0 == len(bs_result_vacancies_SJ):
+    if 0 == len(result_vacanciesSJ):
         try:
-            bs_result_vacancies_SJ = bs_result_SJ.find_all('div', {'class': '_3syPg _3P0J7 _9_FPy'})
+            result_vacanciesSJ = rezultat_zaprosa_SJ.find_all('div', {'class': '_3syPg _3P0J7 _9_FPy'})
         except Exception:
             pass
-    for i in bs_result_vacancies_SJ:
+    for i in result_vacanciesSJ:
         try:
             link = main_link_SJ + i.find('a', {'class': 'icMQ_'}).get('href')
-            vac_list_title_SJ.append(
+            vac_listSJ.append(
                 [link, i.find('div', {'class': '_3mfro CuJz5 PlM3e _2JVkc _3LJqf'}).getText(), 'SuperJob',
                  link.split('.html')[0].split('-')[-1]])
         except Exception:
             link = main_link_SJ + i.find('a', {'class': 'icMQ_'}).get('href')
-            vac_list_title_SJ.append([link, i.find('span', {'class': '_1rS-s'}).getText(), 'SuperJob',
-                                      link.split('.html')[0].split('-')[-1]])
-    salaries_SJ = bs_result_SJ.find_all('span', {'class': 'f-test-text-company-item-salary'})
+            vac_listSJ.append([link, i.find('span', {'class': '_1rS-s'}).getText(), 'SuperJob',
+                               link.split('.html')[0].split('-')[-1]])
+    salaries_SJ = rezultat_zaprosa_SJ.find_all('span', {'class': 'f-test-text-company-item-salary'})
     for vac_salary_SJ in salaries_SJ:
         vac_salary_SJ = unicodedata.normalize("NFKD", vac_salary_SJ.getText())
         if vac_salary_SJ[0:3] == 'до ':
@@ -171,17 +166,17 @@ for bs_result_SJ in bs_result_list_SJ:
 salary_data = pd.DataFrame([min_salary, max_salary, currency]).T.rename(
     columns={0: 'min_salary', 1: 'max_salary', 2: 'currency'})
 result_list = []
-vac_list_title_HH.extend(vac_list_title_SJ)
-vac_list_title = vac_list_title_HH
-i = len(vac_list_title)
+vac_listHH.extend(vac_listSJ)
+vac_list_vse = vac_listHH
+i = len(vac_list_vse)
 for k in range(i):
-    result_list.append([vac_list_title[k][1],
+    result_list.append([vac_list_vse[k][1],
                         salary_data['min_salary'][k],
                         salary_data['max_salary'][k],
                         salary_data['currency'][k],
-                        vac_list_title[k][0],
-                        vac_list_title[k][2],
-                        vac_list_title[k][3]])
+                        vac_list_vse[k][0],
+                        vac_list_vse[k][2],
+                        vac_list_vse[k][3]])
 result = pd.DataFrame(result_list).rename(
     columns={0: 'Вакансия', 1: 'Мин.зарплата', 2: 'Макс.зарплата', 3: 'Валюта', 4: 'Ссылка', 5: 'Сервис', 6: 'ID'})
 
@@ -200,12 +195,12 @@ for k, i in enumerate(result['Мин.зарплата']):
         result['Мин.зарплата'][k] = float(result['Мин.зарплата'][k])
     except Exception:
         x = []
-        ii = list(result['Мин.зарплата'][k])
+        i2 = list(result['Мин.зарплата'][k])
         while type(i) != int:
-            iii = ii.pop(-1)
-            x.append(iii)
+            i3 = i2.pop(-1)
+            x.append(i3)
             try:
-                i = int(''.join(ii))
+                i = int(''.join(i2))
             except Exception:
                 pass
         result['Мин.зарплата'][k] = float(i)
@@ -216,12 +211,12 @@ for k, i in enumerate(result['Макс.зарплата']):
         result['Макс.зарплата'][k] = float(result['Макс.зарплата'][k])
     except Exception:
         x = []
-        ii = list(result['Макс.зарплата'][k])
+        i2 = list(result['Макс.зарплата'][k])
         while type(i) != int:
-            iii = ii.pop(-1)
-            x.append(iii)
+            i3 = i2.pop(-1)
+            x.append(i3)
             try:
-                i = int(''.join(ii))
+                i = int(''.join(i2))
             except Exception:
                 pass
         result['Макс.зарплата'][k] = float(i)
@@ -231,9 +226,6 @@ result['Макс.зарплата'] = result['Макс.зарплата'].astype
 
 # обработка разных обозначений валют; пока по-разному обозначена только российская валюта
 result.loc[result['Валюта'] == '₽', 'Валюта'] = 'руб.'
-# исправление ID
-# result.loc[result['ID'].str.contains('click\?b='),'ID']=str(result.loc[result['ID'].str.contains('click\?b='),'ID']).split('click?b=')[1].split('\n')[0]
-
 
 client = MongoClient('localhost', 27017)
 
@@ -294,13 +286,16 @@ def searsh_job_by_salary(salary_edge):
 
 
 salary_edge = float(input('Введите желаемую заработную плату для подбора вакансии:\n'))
-# salary_edge = 70000
-search_result_hh_df, search_result_sj_df = searsh_job_by_salary(salary_edge)
-search_result_df = search_result_sj_df.append(search_result_hh_df).reset_index().drop('index', axis=1)
-search_result_df.drop('_id', axis=1, inplace=True)
-search_result_df.head(50)
+# salary_edge = 90000
+poisk_result_hh, poisk_result_sj = searsh_job_by_salary(salary_edge)
+poisk_result = poisk_result_sj.append(poisk_result_hh).reset_index().drop('index', axis=1)
+poisk_result.drop('_id', axis=1, inplace=True)
+poisk_result.head(50)
 
-print(search_result_df)
+print(poisk_result)
 
-count = search_result_df.count()
-print('Кол-во записей в БД:', count)
+result_new_vacancies = pd.DataFrame(result_list).rename(
+    columns={0: 'Вакансия', 1: 'Мин.зарплата', 2: 'Макс.зарплата', 3: 'Валюта', 4: 'Ссылка', 5: 'Сервис', 6: 'ID',
+             7: 'Поисковый запрос'})
+
+print(result_new_vacancies)
