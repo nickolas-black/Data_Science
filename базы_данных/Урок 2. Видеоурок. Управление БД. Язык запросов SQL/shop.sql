@@ -1,3 +1,5 @@
+CREATE DATABASE shop;
+USE shop;
 DROP TABLE IF EXISTS catalogs;
 CREATE TABLE catalogs (
   id SERIAL PRIMARY KEY,
