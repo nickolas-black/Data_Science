@@ -1,0 +1,564 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.7.4"
+    },
+    "colab": {
+      "name": "Урок 2. Дискретные случайные величины. Закон распределения вероятностей. Биномиальный закон распределения. Распределение Пуассона.ipynb",
+      "provenance": [],
+      "collapsed_sections": []
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "zdSh1_KRIs2e",
+        "colab_type": "text"
+      },
+      "source": [
+        "# Урок 2. Дискретные случайные величины. Закон распределения вероятностей. Биномиальный закон распределения. Распределение Пуассона\n",
+        "\n",
+        "## Выполнил - Колеганов Н.Д."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "NcMjC8TKJvaf",
+        "colab_type": "text"
+      },
+      "source": [
+        "# Задание\n",
+        "**Задача 1**\n",
+        "\n",
+        "Контрольная работа состоит из пяти вопросов. На каждый вопрос приведено четыре варианта ответа, один из которых правильный. Составьте закон распределения числа правильных ответов при простом угадывании. Найдите M(X), D(X).\n",
+        "\n",
+        "**Задача 2**\n",
+        "\n",
+        "Пользователь получает в среднем 10 писем со спамом на свой почтовый ящик за сутки. Найти число N, такое, что с вероятностью 0.95 пользователь получит не более N писем со спамом за текущий день.\n",
+        "\n",
+        "**Задача 3**\n",
+        "\n",
+        "Производятся выстрелы по мишени. Вероятность попадания в мишень при одном выстреле равна 0.01. Сколько выстрелов нужно сделать чтобы быть уверенным с вероятностью 0.9, что хотя бы 6 раз будет совершено попадание?\n",
+        "\n",
+        "Подсказка. 1) \"Вероятность попасть k раз при n выстрелах\" - на какое распределение это похоже? 2) А если нам нужна вероятность P(X >= k), а не P(X = k)? 3) Здесь предстоит немножко покодить."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "h6dIVf5ZIs2f",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "import math\n",
+        "from math import lgamma\n",
+        "import numpy as np"
+      ],
+      "execution_count": 1,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ZjGfVKvbIs2k",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **Задача 1**"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "CCdTvurGIs2m",
+        "colab_type": "text"
+      },
+      "source": [
+        "Контрольная работа состоит из пяти вопросов. На каждый вопрос приведено четыре варианта ответа, один из которых правильный. Составьте закон распределения числа правильных ответов при простом угадывании. Найдите `M(X)`, `D(X)`."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "oeOBSr7fKAxi",
+        "colab_type": "text"
+      },
+      "source": [
+        "## *Решение*"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "qAsppU4XIs2n",
+        "colab_type": "text"
+      },
+      "source": [
+        "Определим $X$ как случайную величину, равную числу правильных ответов. Число вопросов $n = 5$, тогда случайная величина принимает следующие значения: $X_1 = 0$, $X_2 = 1$, $X_3 = 2$, $X_4 = 3$, $X_5 = 4$, $X_6 = 5$ (от не угадали ни одного ответа до угадали все ответы). Вероятность угадать правильный вопрос $p = \\frac{1}{4}$, так как для каждого вопроса приведено 4 варианта ответа и только один из них правильный."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "imyO-sgvIs2n",
+        "colab_type": "text"
+      },
+      "source": [
+        "Воспользуемся __формулой Бернулли__:\n",
+        "$$P(X = k) = C_n^k p^k (1 - p)^{n - k} = C_5^k (\\frac{1}{4})^k (\\frac{3}{4})^{5 - k}$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "9w7-22zBIs2o",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 0) = C_5^0 (\\frac{1}{4})^0 (\\frac{3}{4})^{5} = \\frac{5!}{0! \\cdot 5!} \\cdot 1 \\cdot (\\frac{3}{4})^{5} = \\frac{243}{1024} \\approx 0,2373046875$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "IXMIYlrMIs2p",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 1) = C_5^1 (\\frac{1}{4})^1 (\\frac{3}{4})^{4} = \\frac{5!}{1! \\cdot (4)!} \\cdot \\frac{1}{4} \\cdot (\\frac{3}{4})^{4} = 5 \\cdot \\frac{81}{1024} \\approx 0,3955078125$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "m70i2Ei6Is2p",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 2) = C_5^2 (\\frac{1}{4})^2 (\\frac{3}{4})^{3} = \\frac{5!}{2! \\cdot (3)!} \\cdot (\\frac{1}{4})^{2} \\cdot (\\frac{3}{4})^{3} = 10 \\cdot \\frac{1}{16} \\cdot \\frac{27}{64}= \\frac{270}{1024} \\approx 0,263671875$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Oy2BQxheIs2q",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 3) = C_5^3 (\\frac{1}{4})^3 (\\frac{3}{4})^{2} = \\frac{5!}{3! \\cdot 2!} \\cdot (\\frac{1}{4})^{3} \\cdot (\\frac{3}{4})^{2} = 10 \\cdot \\frac{1}{64} \\cdot \\frac{9}{16}= \\frac{90}{1024} \\approx 0,087890625$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "E-nHdSh4Is2q",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 4) = C_5^4 (\\frac{1}{4})^4 (\\frac{3}{4})^{1} = \\frac{5!}{4! \\cdot 1!} \\cdot (\\frac{1}{4})^{4} \\cdot (\\frac{3}{4})^{1} = 5 \\cdot \\frac{1}{256} \\cdot \\frac{3}{4}= \\frac{15}{1024} \\approx 0,0146484375$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Dw7rSInoIs2r",
+        "colab_type": "text"
+      },
+      "source": [
+        "$P(X = 5) = C_5^5 (\\frac{1}{4})^5 (\\frac{3}{4})^{0} = \\frac{5!}{5! \\cdot 0!} \\cdot (\\frac{1}{4})^{5} \\cdot (\\frac{3}{4})^{0} = 1 \\cdot \\frac{1}{1024} \\cdot 1= \\frac{1}{1024} \\approx 0,0009765625$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "0E5RVKulIs2s",
+        "colab_type": "text"
+      },
+      "source": [
+        "|$X_i$|0|1|2|3|4|5|\n",
+        "|---|---|---|---|---|---|---|\n",
+        "|$p_i$|0,23730|0,39551|0,26367|0,08789|0,01465|0,00098|"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "OE7Z3IwpIs2s",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$M(X) = np = 5 \\cdot 0,25 = 1,25$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "sBlz7CpsIs2t",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$D(X) = npq = 5 \\cdot 0,25 \\cdot 0,75 = 0,9375$$"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "zKu-LxXhIs2t",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 265
+        },
+        "outputId": "7591aee0-f538-477e-ec44-00f2b5870d71"
+      },
+      "source": [
+        "x = [0,1,2,3,4,5]\n",
+        "y = [0.23730,0.39551,0.26367,0.08789,0.01465,0.00098]\n",
+        "plt.plot(x,y)\n",
+        "plt.show()"
+      ],
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "W3tIw1skIs2x",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **Задача 2**"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "_S1dSEocIs2y",
+        "colab_type": "text"
+      },
+      "source": [
+        "Пользователь получает в среднем 10 писем со спамом на свой почтовый ящик за сутки. Найти число `N`, такое, что с вероятностью 0.95 пользователь получит не более `N` писем со спамом за текущий день."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Pa8T4wA3KOuV",
+        "colab_type": "text"
+      },
+      "source": [
+        "## *Решение*"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "aswF-AgsIs2y",
+        "colab_type": "text"
+      },
+      "source": [
+        "В среднем за сутки событие наступает $10$ раз, тогда случайная величина $X$, равная количеству наступлений события за единицу времени, имеет распределение Пуассона."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ul2tc1liIs2z",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$P(X = k) = \\dfrac{\\lambda^k e^{-\\lambda}}{k!}$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "nD1JfNKMIs20",
+        "colab_type": "text"
+      },
+      "source": [
+        "Математическое ожидание и дисперсия распределения Пуассона равны:"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "lL0-9W0QIs20",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$M(X) = D(X) = \\lambda = 10$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "kpfjmn6iIs21",
+        "colab_type": "text"
+      },
+      "source": [
+        "тогда"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Wxy3_fmiIs21",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$P(X < N) = \\displaystyle\\sum_{i = 0}^{N} \\dfrac{10^{i} e^{-10}}{i!}$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "-3QyIOVHIs22",
+        "colab_type": "text"
+      },
+      "source": [
+        "где"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "PJ_ySV_5Is22",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$P(N) = 0,95$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "qlBtMTlZIs23",
+        "colab_type": "text"
+      },
+      "source": [
+        "Будем высчитывать вероятность $P(X<N)$ в цикле, увеличивая постепенно $N$, до тех пор пока не достигнем заданной вероятности."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "tdhcgw21Is24",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        },
+        "outputId": "e3bed9c9-ad8a-419a-b406-e9d462bb03c4"
+      },
+      "source": [
+        "p = 0\n",
+        "p_n = 0.95\n",
+        "i = 0\n",
+        "while p <= p_n:\n",
+        "    p += 10**i*math.exp(-10)/math.factorial(i)\n",
+        "    i += 1\n",
+        "print(f'N = {i}')"
+      ],
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "N = 16\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "3BaLMTVIIs28",
+        "colab_type": "text"
+      },
+      "source": [
+        "Пользователь получит не более 16 писем со спамом за текущий день."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "LluRPGzYIs29",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **Задача 3**"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "zB5gc21_Is2-",
+        "colab_type": "text"
+      },
+      "source": [
+        "Производятся выстрелы по мишени. Вероятность попадания в мишень при одном выстреле равна 0.01. Сколько выстрелов нужно сделать чтобы быть уверенным с вероятностью 0.9, что хотя бы 6 раз будет совершено попадание?\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "RQReFR6NKTRo",
+        "colab_type": "text"
+      },
+      "source": [
+        "## *Решение*"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "GABhkOGbIs2_",
+        "colab_type": "text"
+      },
+      "source": [
+        "Пусть событие заключается в попадании в мишень, тогда вероятность попадания при одиночном выстреле $p = 0,01$ и всего пападаний при этом $k >= 6$ с вероятностью $P(X \\geq 6) = 0,9$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "-unFB3z8Is3A",
+        "colab_type": "text"
+      },
+      "source": [
+        "Тогда"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "9zYALbBAIs3B",
+        "colab_type": "text"
+      },
+      "source": [
+        "$$P(X \\geq 6) = 1 - P(X < 6)$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "airAVGIEIs3C",
+        "colab_type": "text"
+      },
+      "source": [
+        "Воспользуемся __формулой Бернулли__:\n",
+        "$$P(X = k) = C_n^k p^k (1 - p)^{n - k}$$"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "JC7N5KdNIs3D",
+        "colab_type": "text"
+      },
+      "source": [
+        "Здесь $k = 6$, $p = 0,01$, а $1 - p = 0,99$. Необходимо найти $n$."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "tX4rcSixIs3D",
+        "colab_type": "text"
+      },
+      "source": [
+        "Возьмем $n_0 = 6$ и в цикле будем ее увеличивать пока не достигнем нужной точности."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "zNQiBcRaIs3E",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        },
+        "outputId": "5037ad44-09f0-4b95-8d9c-4f08ffeaf475"
+      },
+      "source": [
+        "def f(x):\n",
+        "    return 1 if x == 0 else x/np.e**(lgamma(x)/x)\n",
+        "\n",
+        "def bernoulli(n, k, p):\n",
+        "    return p**k * (1 - p)**(n - k) * f(n) / f(k) / f(n - k)\n",
+        "\n",
+        "p = 0.01\n",
+        "k = 6\n",
+        "P_ = 0.9\n",
+        "P_n = 0.9\n",
+        "n = 6\n",
+        "\n",
+        "while P_ <= P_n:\n",
+        "    P_ = 1.0\n",
+        "    for i in range(k):\n",
+        "        P_ -= bernoulli(n,i,p)\n",
+        "    n += 1\n",
+        "    \n",
+        "print(f'N = {n}')"
+      ],
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "N = 232\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "RK4uXJ4yIs3I",
+        "colab_type": "text"
+      },
+      "source": [
+        "Чтобы было хотя бы $6$ попаданий с вероятностью $0,9$ необходимо произвести $232$ выстрела."
+      ]
+    }
+  ]
+}
